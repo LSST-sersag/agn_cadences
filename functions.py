@@ -10,31 +10,32 @@ from scipy.stats import binned_statistic
 from ipywidgets import widgets
 from IPython.display import display
 import time
+import matplotlib
+from mpl_toolkits.axes_grid1 import AxesGrid
+import matplotlib.ticker as ticker
+
 
 # Authors: dr Andjelka Kovacevic & Isidora Jankov & Viktor Radovic
 
-def LC_conti(long, deltatc=1, oscillations=True, A=0.14, noise=0.00005, z=0, z_corr='Kelly'):
+
+def LC_conti(long, deltatc=1, oscillations=True, A=0.14, noise=0.00005, z=0, frame='observed'):
     """ 
     Parameters:
     -----------
     long: int
         Duration of the survey in days.
     deltatc: float or int, default=1
-        Cadence (time interval between two observations or samplings of the light curve in days).
+        Cadence (time interval between two observations in days).
     oscillations: bool, default=True
         If True, light curve simulation will take an oscillatory signal into account.
-    A: float or int, default=0.2
+    A: float or int, default=0.14
         Amplitude of the oscillatory signal in magnitudes.
     noise: float, default=0.00005
         Add noise to the simulated light curve.
     z: float, default=0
-        Redshift. It is used for converting damping time scale (tau) and an amplitude of correlation decay (sigma)
-        to observed frame.
-    z_corr: 'Kelly' or 'Standard', default='Kelly'
-        Method of calculation and conversion of tau and sigma to observed frame. 
-            - 'Kelly' refers to calculations according to eq. (22) and (25) in Kelly+2009.
-            - 'Standard' refers to calculations according to eq. (22) and (25) in Kelly+2009 but omitting redshift in the equation.
-               After the calculation, tau and sigma are converted to observed frame according to eq. (17) and (18) in Kelly+2009.
+        Redshift.
+    frame: str, default='observed'
+        Frame of reference. Options: 'observed' and 'rest'.
     
     Returns:
     --------
@@ -60,33 +61,30 @@ def LC_conti(long, deltatc=1, oscillations=True, A=0.14, noise=0.00005, z=0, z_c
     # Calculate M_{SMBH}
     msmbh=np.power((lumbol*const2/const1),2/3.)
     
-    if z_corr == 'Kelly':
-        # Calculate damping time scale
-        logtau = -8.13+0.24*np.log10(lumbol)+0.34*np.log10(1+z)
-        tau = np.power(10,logtau)
-        # Calculate log sigma^2 - an amplitude of correlation decay
-        logsig2 = 8-0.27*np.log10(lumbol)+0.47*np.log10(1+z)
-        sig=np.sqrt(np.power(10,logsig2))
-    elif z_corr == 'Standard':
-        # Calculate damping time scale
-        logtau = -8.13+0.24*np.log10(lumbol)
+    # Calculate damping time scale (Kelly et al. 2009)
+    logtau = -8.13+0.24*np.log10(lumbol)+0.34*np.log10(1+z)
+    if frame == 'observed':
         tau = np.power(10,logtau)*(1+z)
-        # Calculate log sigma^2 - an amplitude of correlation decay
-        logsig2 = 8-0.27*np.log10(lumbol)
-        sig=np.sqrt(np.power(10,logsig2))/np.sqrt(1+z)
+    elif frame == 'rest':
+        tau = np.power(10,logtau)
     
-    # OPTIONAL: Calculate broad line region (BLR) radius
+    # Calculate log sigma^2 - an amplitude of correlation decay
+    logsig2 = 8-0.27*np.log10(lumbol)+0.47*np.log10(1+z)
+    if frame == 'observed':
+        sig = np.sqrt(np.power(10,logsig2))/np.sqrt(1+z)
+    elif frame == 'rest':
+        sig = np.sqrt(np.power(10,logsig2))
+          
+    # OPTIONAL: Calculate the broad line region (BLR) radius
     logrblr=1.527+0.533*np.log10(lumbol/1e44)
     rblr=np.power(10,logrblr)
     rblr=rblr/10
     
     # Calculating light curve points
     ss = np.zeros(times)
-    #ss[0] = np.random.normal(meanmag, sig, 1)
     ss[0] = meanmag
     SFCONST2=sig*sig
     ratio = -deltatc/tau
-    #ssigma1=np.sqrt(sig2)*np.sqrt((1-np.exp(2*ratio)))
     
     for i in range(1, times):
         ss[i] = np.random.normal(ss[i-1]*np.exp(ratio) + meanmag*(1-np.exp(ratio)),
@@ -106,12 +104,12 @@ def LC_conti(long, deltatc=1, oscillations=True, A=0.14, noise=0.00005, z=0, z_c
         conver=173.145 # convert from LightDays to AU
         lightdays=10.
         P = np.sqrt(((lightdays*conver)**3)/(msmbh))
+        # Calculating and adding oscillatory signal
         sinus=A*np.sin(2*np.pi*tt/(P*365.))
         ss = ss + sinus
         yy = np.zeros(times)
         for i in range(times):
-            # Error, noise and oscillatory signal are added to each flux value
-            #yy[i] = ss[i] + np.sqrt(greska2[i]) + np.random.normal(0,(noise*greska2[i]),1) + sinus[i]
+            # Adding error and noise to each flux value
             yy[i] = ss[i] + np.random.normal(0,((noise*ss[i])),1) + np.sqrt(greska2[i])
     
         return tt, yy
@@ -120,71 +118,11 @@ def LC_conti(long, deltatc=1, oscillations=True, A=0.14, noise=0.00005, z=0, z_c
     if oscillations == False:
         yy = np.zeros(times)
         for i in range(times):
-            # Error and noise are added to each flux value
-            #yy[i] = ss[i] + np.sqrt(greska2[i]) + np.random.normal(0,(noise*greska2[i]),1)
+            # Adding error and noise to each flux value
             yy[i] = ss[i] + np.random.normal(0,((noise*ss[i])),1) + np.sqrt(greska2[i])
     
         return tt, yy
 
-def LC_conti_old(long, sigma, tau, deltatc=1, oscillations=True, A=0.2, P=500, noise=0.05):
-    """ 
-    Parameters:
-    -----------
-    long: int
-        Duration of the survey in days.
-    sigma: float
-        Standard deviation for Dumped Random Walk (DRW).
-    tau: float or int
-        Time lag.
-    deltatc: float or int, default=1
-        Cadence (time interval between two observations or samplings of the light curve in days).
-    oscillations: bool, default=True
-        If True, light curve simulation will take the oscilatory signal into account.
-    P: float or int, default=500
-        Period of the oscilatory signal in days.
-    A: float or int, default=0.2
-        Amplitude of the oscilatory signal in magnitudes.
-    noise: float, default=0.05
-        Add noise to the simulated light curve.
-     
-    Returns:
-    --------
-    yy: np.array
-        Obesrved light curve points (Eq. 17 in Kovacevic+2020).
-    tt: np.array
-        Days during the survey on which we had an observation.
-    """
-    # Generating survey days
-    tt = np.arange(0, long, int(deltatc))
-    times = tt.shape[0]
-    
-    # Calculating light curve points (Kovacevic+2020)
-    ss = np.zeros(times)
-    ss[0] = np.random.normal(0, sigma, 1)
-    ssigma1=sigma*np.sqrt((1-np.exp(-2*deltatc/tau)))
-    
-    # Light curve with oscillations
-    if oscillations == True:
-        sinus=np.zeros(times)
-        for i in range(1, times):
-            sinus[i]=A*np.sin(2*np.pi*tt[i]/P)
-            ss[i] = ss[i-1]*np.exp(-deltatc/tau) + np.random.normal(0, ssigma1,1)
-            
-        yy = np.zeros(times)
-        for i in range(times):
-            yy[i]=ss[i]+np.random.normal(0,(noise*np.abs(ss[i])),1)+sinus[i]
-        
-        return tt, yy
-    
-    # Light curve without oscillations
-    elif oscillations == False:
-        for i in range(1, times): 
-            ss[i] = ss[i-1]*np.exp(-deltatc/tau) + np.random.normal(0, ssigma1,1)
-        yy=np.zeros(times)
-        for i in range(times):
-            yy[i]=ss[i]+np.random.normal(0,(noise*np.abs(ss[i])),1)
-        
-        return tt, yy
 
 
 def LC_opsim(mjd,t,y):
@@ -269,10 +207,10 @@ def sf(t,y,z=0):
     return s, edges
     
     
-def LC_SF_viz(long, deltatc, opsims, labels, oscillations=True, A=0.2):
+def LC_SF_viz(long, deltatc, opsims, labels, oscillations=True, A=0.14, noise=0.00005, z=0, frame='observed'):
     # Every time the LC_conti function is called, a random simulated light curve is generated. We do this only once because
     # we want to evaluate OpSim light curves on the same referent continuous light curve.
-    tt, yy = LC_conti(long, deltatc, oscillations, A)
+    tt, yy = LC_conti(long, deltatc, oscillations, A, noise, z, frame)
     
     # Now, we calculate structure function for the continuous light curve.
     
@@ -360,7 +298,6 @@ def LC_SF_viz(long, deltatc, opsims, labels, oscillations=True, A=0.2):
     fig2.suptitle('Structure functions', y=0.96, fontsize=17)
     
     
-    
 def var_cad(tt, yy, m1=0,m2=0,m3=0,m4=0,m5=0,m6=0,m7=0,m8=0,m9=0,m10=0,m11=0,m12=0):
     """
     Parameters:
@@ -431,9 +368,17 @@ def var_cad(tt, yy, m1=0,m2=0,m3=0,m4=0,m5=0,m6=0,m7=0,m8=0,m9=0,m10=0,m11=0,m12
     ym = ym[ym!=-999]
     
     return tm, ym
+
+
+
+def progressBar(current, total, barLength = 20):
+    percent = float(current) * 100 / total
+    arrow   = '-' * int(percent/100 * barLength - 1) + '>'
+    spaces  = ' ' * (barLength - len(arrow))
+
+    print('Progress: [%s%s] %d %%' % (arrow, spaces, percent), end='\r')
     
-    
-def SF_heatmap(mjd, label, nlc=50, z_corr='Kelly'):
+def SF_heatmap(mjd, label, lb='map', nlc=50, frame='observed', save=True, cmap='RdBu_r', c=30):
     """
     Parameters:
     -----------
@@ -447,7 +392,8 @@ def SF_heatmap(mjd, label, nlc=50, z_corr='Kelly'):
         Method of calculation and conversion of tau and sigma to observed frame. See documentation for LC_conti().  
     """
     
-    zbin = np.linspace(0.5,6.5,7)
+    zbin = np.linspace(0.5,7.5,8)
+    zbin = np.insert(zbin,0,0)
     long=np.int(mjd.max()-mjd.min()+1)
     swop=[]
     wedgeop=[]
@@ -455,10 +401,12 @@ def SF_heatmap(mjd, label, nlc=50, z_corr='Kelly'):
     edgecop=[]
     i=0
     # Za svako tau se generise po 50 svetlosnih krivih.
+    total = len(zbin)*(nlc);
+    progress = 0;
     for z in zbin:
         for w in range(nlc):
             # Generisanje kontinualne krive (kadenca=1)
-            tt, yy = LC_conti(long, z=z, z_corr=z_corr)
+            tt, yy = LC_conti(long, z=z, frame=frame)
             sn, edgesn = sf(tt,yy,z=z)
             scop.append(sn)
             edgecop.append(edgesn)
@@ -470,52 +418,57 @@ def SF_heatmap(mjd, label, nlc=50, z_corr='Kelly'):
             srol,edgesrol=sf(top,yop,z=z)
             swop.append(srol)
             wedgeop.append(edgesrol)
+            progressBar(progress, total);
+            progress = progress + 1;
         i=i+1  # brojac
-        print(i)
-        
+
+ 
     swop=np.asarray(swop)
-    swop=swop.reshape(7,nlc,99)
+    swop=swop.reshape(9,nlc,99)
     scop=np.asarray(scop)
-    scop=scop.reshape(7,nlc,99)
+    scop=scop.reshape(9,nlc,99)
     razrol=[]
-    for z in range(7):
+    for z in range(9):
         for r in range(nlc):
             # U nizu scop[z,r,:] i swop[z,r,:] zamenjujemo nan vrednosti sa nulom, a istovremeno racunamo razliku izmedju
             # SF_conti i SF_opsim.
             razrol.append((np.nan_to_num(np.sqrt(scop[z,r,:]))-np.nan_to_num(np.sqrt(swop[z,r,:]))))
     
-    razrol7=np.asarray(razrol)
-    razrol7=razrol7.reshape(7,nlc,99)
-    #raz2=(razrol7[:,:,:].mean(1))
-    raz2=np.nanmean(razrol7[:,:,:],axis=1)
+    razrol9=np.asarray(razrol)
+    razrol9=razrol9.reshape(9,nlc,99)
+    #raz2=(razrol9[:,:,:].mean(1))
+    raz2=np.nanmean(razrol9[:,:,:],axis=1)
     
-    plt.imshow(raz2[:,:], interpolation='bilinear',cmap='RdBu', extent=[np.log10(edgesn[:-1].min()),np.log10(edgesn[-1].max()),0,7],aspect='auto')
-    plt.xlabel(r'$\log_{10}(\Delta t)$')
-    plt.ylabel(r'z')
-    cbar=plt.colorbar()
-    cbar.set_label('averaged SF(1 day cadence) - SF(%s)' %(label))
+    #orig_cmap = cmap
+    #pos = raz2.max()
+    #neg = abs(raz2.min())
+    #midpoint = neg / (pos+neg)
+    #new_cmap = shiftedColorMap(orig_cmap, midpoint=midpoint, name='shifted')
+    
+    fig = plt.figure(figsize=(8,6))
+    ax = fig.add_subplot(111)
+    X, Y = np.meshgrid(np.log10(edgesn[:-1])+((np.log10(edgesn[1])-np.log10(edgesn[0]))/2), zbin)
+    sf_max = raz2.max()
+    sf_min = raz2.min()
+    if ((sf_max > abs(sf_min)) & (sf_max >= 0) & (sf_min < 0)):
+        im = plt.contourf(X, Y, raz2, c, cmap=cmap, vmax=sf_max, vmin=-sf_max)
+    elif ((sf_max < abs(sf_min)) & (sf_max >= 0) & (sf_min < 0)):
+        im = plt.contourf(X, Y, raz2, c, cmap=cmap, vmax=abs(sf_min), vmin=sf_min)
+    else:
+        im = plt.contourf(X, Y, raz2, c, cmap=cmap, vmax=sf_max, vmin=sf_min)
+    ax.set_xlabel(r'$\mathrm{log_{10}}(\Delta \mathrm{t})$',fontsize=16)
+    ax.set_ylabel(r'z',fontsize=16)
+    ax.xaxis.set_major_locator(ticker.MultipleLocator(0.5))
+    ax.set_xlim(0,4)
+    ax.set_ylim(0,7)
+    cbar=fig.colorbar(im)
+    cbar.set_label('averaged SF(1 day cad.) - SF(%s)' %(label), fontsize=13)
+    cbar.ax.tick_params(labelsize=14)
+    ax.tick_params(axis='both', which='major', labelsize=15, direction='out', length = 5, pad = 5)
+    if save==True:
+        plt.savefig(lb+'.pdf', dpi=250)
     plt.show()
     
-"""    
-    razrol=[]
-    for z in range(7):
-        for r in range(nlc):
-            # U nizu scop[z,r,:] i swop[z,r,:] zamenjujemo nan vrednosti sa nulom, a istovremeno racunamo razliku izmedju
-            # SF_conti i SF_opsim.
-            razrol.append((np.sqrt(scop[z,r,:]))-np.sqrt(swop[z,r,:]))
-    
-    razrol7=np.asarray(razrol)
-    razrol7=razrol7.reshape(7,nlc,99)
-    raz2=np.nan_to_num(razrol7[:,:,:].mean(1))
-    #raz2=np.nanmean(razrol7[:,:,:],axis=1)
-    
-    plt.imshow(raz2[:,:], interpolation='bilinear',cmap='RdBu', extent=[np.log10(edgesn[:-1].min()),np.log10(edgesn[-1].max()),0,7],aspect='auto')
-    plt.xlabel(r'$\log_{10}(\Delta t)$')
-    plt.ylabel(r'z')
-    cbar=plt.colorbar()
-    cbar.set_label('averaged SF(1 day cadence) - SF(%s)' %(label))
-    plt.show()
-"""
 
 # get opsim cadence file
 def getOpSimCadence(opsim, name, ra = 0, dec = 0, fil = 'r'):
