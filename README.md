@@ -9,3 +9,4 @@ Motivated by upcoming large photometric and spectroscopic surveys covering a bro
  
  The discussed multiple regression model for cadence prediction can help in designing both spectroscopic and photometric surveys. We showed that the reconstruction of SF properties of AGN light-curves with oscillatory signals is strongly dependant on the observing cadences, which could be important for the selection of operation strategy for surveys such as the LSST. The proposed multiple regression is promising for predicting AGN observables cadences in both LSST-like and sparser strategies, but it will be tested further in larger samples of objects such as SDSS.
 
+In Jupyter file cadences_file.ipynb we have shown results obtained using the lastest LSST OpSim realisation 1.7.
