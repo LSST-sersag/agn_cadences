@@ -1,4 +1,5 @@
-# lsst_agn_sf
+## The effects of cadence selection for determination of time lags, oscillations and quality of Structure Function (SF) 
+[![HitCount](http://hits.dwyl.com/LSST-sersag/agn_cadences.svg)](http://hits.dwyl.com/LSST-sersag/agn_cadences)
 
 
 
