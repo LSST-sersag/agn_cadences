@@ -9,3 +9,8 @@ For time-lags and oscillation detection, we design a multiple regression model o
 The discussed multiple regression model for cadence prediction can help in designing both spectroscopic and photometric surveys. We showed that the reconstruction of SF properties of AGN light-curves with oscillatory signals is strongly dependant on the observing cadences, which could be important for the selection of operation strategy for upcoming large photometric and spectroscopic surveys. 
 
 
+
+
+### References
+
+A. Kovačević,D. Ilić,L.Č. Popović,V. Radović,I. Jankov,I. Yoon,I. Čvorović-Hajdinjak,S. Simić [On possible proxies of AGN light curves cadence selection in future time domain surveys](#) (2001) <i><u> in prepration </i></u>
