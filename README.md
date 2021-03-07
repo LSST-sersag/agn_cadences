@@ -13,4 +13,4 @@ The discussed multiple regression model for cadence prediction can help in desig
 
 ### References
 
-A. Kovačević,D. Ilić,L.Č. Popović,V. Radović,I. Jankov,I. Yoon,I. Čvorović-Hajdinjak,S. Simić [On possible proxies of AGN light curves cadence selection in future time domain surveys](#) (2001) <i><u> in prepration </i></u>
+A. Kovačević, D. Ilić, L. Č. Popović, V. Radović, I. Jankov, I. Yoon, I. Čvorović-Hajdinjak, S. Simić [On possible proxies of AGN light curves cadence selection in future time domain surveys](#) (2021) <i><u> in prepration </i></u>
