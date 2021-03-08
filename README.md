@@ -18,6 +18,7 @@ The discussed multiple regression model for cadence prediction can help in desig
 * `healpy`
 * `scipy`
 * `ipywidgets`
+* `csv`
 * `lsst.sims.maf` (see https://github.com/lsst/sims_maf)
 
 2. For the purpose of testing OpSim cadences it is obligatory to download desired OpSim realisation ([OpSim LSST](https://www.lsst.org/scientists/simulations/opsim), [OpSim realisations](https://epyc.astro.washington.edu/~lynnej/opsim_downloads/) ). In the code examples we used FBS  1.7 OpSim realisation.
