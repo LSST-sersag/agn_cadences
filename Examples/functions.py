@@ -289,8 +289,8 @@ def LC_SF_viz(long, deltatc, opsims, labels, oscillations=True, A=0.14, noise=0.
         ax.legend()
         ax.grid(True)    
     
-    tops = np.asarray(tops)
-    yops = np.asarray(yops)
+    tops = np.asarray(tops, dtype=object)
+    yops = np.asarray(yops, dtype=object)
     
     plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=None, hspace=0.05)
     fig1.suptitle('Light curves', y=0.92, fontsize=17)
