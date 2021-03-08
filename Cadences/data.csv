@@ -1,4 +1,5 @@
 filter,fbs,realisation,ra,dec,noise,amp
-g,1.5,agnddf_v1.5_10yrs.db,0,-30,5,0.2
-r,1.5,agnddf_v1.5_10yrs.db,0,-30,5,0.2
-u,1.5,agnddf_v1.5_10yrs.db,0,-30,5,0.2
+g,1.7,ddf_dither0.00_v1.7_10yrs.db,9,-44,5,0.2
+r,1.7,ddf_dither0.00_v1.7_10yrs.db,9,-44,5,0.2
+g,1.7,rolling_scale0.2_nslice2_v1.7_10yrs.db,0,-30,5,0.2
+r,1.7,rolling_scale0.2_nslice2_v1.7_10yrs.db,0,-30,5,0.2
