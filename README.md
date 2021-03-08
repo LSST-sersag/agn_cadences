@@ -25,7 +25,7 @@ The discussed multiple regression model for cadence prediction can help in desig
 ### Repo organization
  
 * Folder `Examples` contains README.md file and Jupyter notbooks with detailed explanations.
-* Folder  `Code` contains main code
+* Folder  `Cadences` contains main code
 
 ### References
 
