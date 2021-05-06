@@ -3,10 +3,10 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-#import healpy as hp
+import healpy as hp
 from scipy.stats import binned_statistic
-#from ipywidgets import widgets
-#from IPython.display import display
+from ipywidgets import widgets
+from IPython.display import display
 import time
 import matplotlib.ticker as ticker
 
